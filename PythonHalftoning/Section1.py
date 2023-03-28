@@ -4,6 +4,7 @@ from matplotlib import cm
 import numpy as np
 from PIL import Image
 from numpy import linalg as LA
+import math
 
 def calculate_Y(img):
     y_list = []
@@ -130,6 +131,13 @@ def rmse(array_orig, array_binary):
     rmse = np.sqrt(error_sum)
     return rmse
 
+def ungamma(g_array, gamma):
+    for row_idx in range(g_array.shape[0]):
+        for col_idx in range(g_array.shape[1]):
+            g_array[row_idx, col_idx] = math.pow((g_array[row_idx, col_idx]/255), gamma)    
+            g_array[row_idx, col_idx] *= 255
+    return g_array
+
 # Section 1
 img_house = Image.open('house.tif')
 #img14sp_plot = plt.imshow(img14sp)
@@ -146,6 +154,9 @@ array_thresh_double = convert_image_to_double_array(img_thresh)
 
 # Calculate rmse
 house_rmse = rmse(array_house_double, array_thresh_double)
+print("RMSE:",house_rmse)
+# Ungamma initial image
+array_house_double = ungamma(array_house_double, 2.2)
 
 #Y = calculate_Y(img14g)
 #Z = calculate_Z(img14bl,Y)
