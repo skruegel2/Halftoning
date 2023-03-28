@@ -5,20 +5,6 @@ import numpy as np
 from PIL import Image
 from numpy import linalg as LA
 
-# Section 1
-img14g = Image.open('img14g.tif')
-#img14g_plot = plt.imshow(img14g)
-#plt.show()
-img14bl = Image.open('img14bl.tif')
-#img14bl_plot = plt.imshow(img14bl)
-#plt.show()
-img14gn = Image.open('img14gn.tif')
-#img14gn_plot = plt.imshow(img14gn)
-#plt.show()
-img14sp = Image.open('img14sp.tif')
-#img14sp_plot = plt.imshow(img14sp)
-#plt.show()
-
 def calculate_Y(img):
     y_list = []
     # Convert into array
@@ -115,6 +101,27 @@ def apply_optimal_filter(theta_star_array, im, filename):
     im_filtered.save(filename)    
     #im_filtered.show()
 
+def threshold_image(img, thresh):
+    X = np.array(img)
+    Y = np.zeros((X.shape))
+    for row_idx in range(X.shape[0]):
+        for col_idx in range(X.shape[1]):
+            if X[row_idx, col_idx] > thresh:
+                Y[row_idx, col_idx] = 255
+            else:
+                Y[row_idx, col_idx] = 0
+    return Y
+
+# Section 1
+img_house = Image.open('house.tif')
+#img14sp_plot = plt.imshow(img14sp)
+#plt.show()
+
+# Threshold house image
+thresh_array = threshold_image(img_house, 127)
+img_thresh = Image.fromarray(thresh_array.astype(np.uint8))
+img_thresh.save("Thresholded house.tif") 
+
 #Y = calculate_Y(img14g)
 #Z = calculate_Z(img14bl,Y)
 #Rzz = calculate_Rzz(Z)
@@ -133,11 +140,11 @@ def apply_optimal_filter(theta_star_array, im, filename):
 #print(theta_star_array)
 #apply_optimal_filter(theta_star_array, img14gn,"Filtered noisy image 1 (img14gn).tif")
 
-Y = calculate_Y(img14g)
-Z = calculate_Z(img14sp,Y)
-Rzz = calculate_Rzz(Z)
-Rhat_zy = calculate_Rhat_zy(Y, Z)
-theta_star = calculate_theta_star(Rzz, Rhat_zy)
-theta_star_array = calculate_theta_star_array(theta_star)
-print(theta_star_array)
-apply_optimal_filter(theta_star_array, img14sp,"Filtered noisy image 2 (img14sp).tif")
+#Y = calculate_Y(img14g)
+#Z = calculate_Z(img14sp,Y)
+#Rzz = calculate_Rzz(Z)
+#Rhat_zy = calculate_Rhat_zy(Y, Z)
+#theta_star = calculate_theta_star(Rzz, Rhat_zy)
+#theta_star_array = calculate_theta_star_array(theta_star)
+#print(theta_star_array)
+#apply_optimal_filter(theta_star_array, img14sp,"Filtered noisy image 2 (img14sp).tif")
