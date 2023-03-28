@@ -112,6 +112,24 @@ def threshold_image(img, thresh):
                 Y[row_idx, col_idx] = 0
     return Y
 
+def convert_image_to_double_array(img):
+    converted = np.array(img, dtype = float)
+    return converted;
+
+def rmse(array_orig, array_binary):
+    # Work from inside out
+    error_sum = 0
+    for row_idx in range(array_orig.shape[0]):
+        for col_idx in range(array_orig.shape[1]):
+            error_sum += ((array_orig[row_idx, col_idx] -
+                         array_binary[row_idx, col_idx]) *
+                         (array_orig[row_idx, col_idx] -
+                         array_binary[row_idx, col_idx]))
+    error_sum /= array_orig.shape[0]
+    error_sum /= array_orig.shape[1]
+    rmse = np.sqrt(error_sum)
+    return rmse
+
 # Section 1
 img_house = Image.open('house.tif')
 #img14sp_plot = plt.imshow(img14sp)
@@ -121,6 +139,13 @@ img_house = Image.open('house.tif')
 thresh_array = threshold_image(img_house, 127)
 img_thresh = Image.fromarray(thresh_array.astype(np.uint8))
 img_thresh.save("Thresholded house.tif") 
+
+# Convert images to double
+array_house_double = convert_image_to_double_array(img_house)
+array_thresh_double = convert_image_to_double_array(img_thresh)
+
+# Calculate rmse
+house_rmse = rmse(array_house_double, array_thresh_double)
 
 #Y = calculate_Y(img14g)
 #Z = calculate_Z(img14bl,Y)
