@@ -101,23 +101,69 @@ def fidelity(f, b):
     sum = math.pow(sum, 0.5)
     return sum
 
-# Section 1
-img_house = Image.open('house.tif')
-#img14sp_plot = plt.imshow(img14sp)
-#plt.show()
+def generate_bayer(IN):
+    new_bayer = np.block([
+        [4*IN+1, 4*IN+2],
+        [4*IN+3, 4*IN]
+        ])
+    return new_bayer
 
-# Threshold house image
-thresh_array = threshold_image(img_house, 127)
-img_thresh = Image.fromarray(thresh_array.astype(np.uint8))
-img_thresh.save("Thresholded house.tif") 
+def create_threshold_matrix(index):
+    N = index.shape[0]
+    t = np.zeros((N,N))
+    for row_idx in range(N):
+        for col_idx in range(N):
+            t[row_idx, col_idx] = 255 * (index[row_idx,col_idx] + 0.5)/(N*N)
+    return t
+
+def dither_one_tile(image_array, thresh, cur_row, cur_col):
+    for row_idx in range(thresh.shape[0]):
+        for col_idx in range(thresh.shape[1]):
+            if (image_array[(cur_row+row_idx),(cur_col+col_idx)] > thresh[row_idx,col_idx]):
+                image_array[(cur_row+row_idx),(cur_col+col_idx)] = 255
+            else:
+                image_array[(cur_row+row_idx),(cur_col+col_idx)] = 0
+     return image_array
+
+
+def dither_image(image_array, thresh, filename):
+    N = thresh.shape[0]
+    for row_idx in range(image_array.shape[0]):
+        for col_idx in range(image_array.shape[1]):
+            if ((row_idx % thresh.shape[0] == 0) and (col_idx % thresh.shape[1] == 0)):
+                image_array = dither_one_tile(image_array, thresh, row_idx, col_idx)
+    im_filtered = Image.fromarray(image_array.astype(np.uint8))
+    im_filtered.save(filename)    
+
+
+# Section 4
+img_house = Image.open('house.tif')
 
 # Convert images to double
 array_house_double = convert_image_to_double_array(img_house)
-array_thresh_double = convert_image_to_double_array(img_thresh)
+
+# Create Bayer index matrices
+I_2 = np.zeros((2,2))
+I_2[0,0] = 1
+I_2[0,1] = 2
+I_2[1,0] = 3
+I_2[1,1] = 0
+
+I_4 = generate_bayer(I_2)
+I_8 = generate_bayer(I_4)
+
+# Generate threshold matrices
+T_2 = create_threshold_matrix(I_2)
+T_4 = create_threshold_matrix(I_4)
+T_8 = create_threshold_matrix(I_8)
+
+dither_image(array_house_double, T_2, "DitherWith2by2.tif")
+
 
 # Calculate rmse
 house_rmse = rmse(array_house_double, array_thresh_double)
 print("RMSE:",house_rmse)
+
 # Ungamma initial image
 array_house_double = ungamma_correct(array_house_double, 2.2)
 # Fill low pass filter
@@ -126,7 +172,7 @@ gaussian_lpf = calculate_lpf(gaussian_lpf, 2)
 
 #apply filter
 array_house_double = apply_guassian_filter(gaussian_lpf,array_house_double)
-array_thresh_double = apply_guassian_filter(gaussian_lpf,array_thresh_double)
+
 
 #apply transformation
 array_house_double = apply_transformation(array_house_double)
@@ -135,3 +181,4 @@ array_thresh_double = apply_transformation(array_thresh_double)
 #calculate fidelity
 fid = fidelity(array_house_double, array_thresh_double)
 print("Fidelity:", fid)
+
