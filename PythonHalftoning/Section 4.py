@@ -123,7 +123,7 @@ def dither_one_tile(image_array, thresh, cur_row, cur_col):
                 image_array[(cur_row+row_idx),(cur_col+col_idx)] = 255
             else:
                 image_array[(cur_row+row_idx),(cur_col+col_idx)] = 0
-     return image_array
+    return image_array
 
 
 def dither_image(image_array, thresh, filename):
@@ -142,6 +142,9 @@ img_house = Image.open('house.tif')
 # Convert images to double
 array_house_double = convert_image_to_double_array(img_house)
 
+# Ungamma initial image
+array_house_double = ungamma_correct(array_house_double, 2.2)
+ 
 # Create Bayer index matrices
 I_2 = np.zeros((2,2))
 I_2[0,0] = 1
@@ -158,27 +161,32 @@ T_4 = create_threshold_matrix(I_4)
 T_8 = create_threshold_matrix(I_8)
 
 dither_image(array_house_double, T_2, "DitherWith2by2.tif")
-
-
-# Calculate rmse
-house_rmse = rmse(array_house_double, array_thresh_double)
-print("RMSE:",house_rmse)
-
-# Ungamma initial image
+array_house_double = convert_image_to_double_array(img_house)
 array_house_double = ungamma_correct(array_house_double, 2.2)
-# Fill low pass filter
-gaussian_lpf = np.zeros((7,7))
-gaussian_lpf = calculate_lpf(gaussian_lpf, 2)
-
-#apply filter
-array_house_double = apply_guassian_filter(gaussian_lpf,array_house_double)
+dither_image(array_house_double, T_4, "DitherWith4by4.tif")
+array_house_double = convert_image_to_double_array(img_house)
+array_house_double = ungamma_correct(array_house_double, 2.2)
+dither_image(array_house_double, T_8, "DitherWith8by8.tif")
 
 
-#apply transformation
-array_house_double = apply_transformation(array_house_double)
-array_thresh_double = apply_transformation(array_thresh_double)
+## Calculate rmse
+#house_rmse = rmse(array_house_double, array_thresh_double)
+#print("RMSE:",house_rmse)
+
+
+## Fill low pass filter
+#gaussian_lpf = np.zeros((7,7))
+#gaussian_lpf = calculate_lpf(gaussian_lpf, 2)
+
+##apply filter
+#array_house_double = apply_guassian_filter(gaussian_lpf,array_house_double)
+
+
+##apply transformation
+#array_house_double = apply_transformation(array_house_double)
+#array_thresh_double = apply_transformation(array_thresh_double)
 
 #calculate fidelity
-fid = fidelity(array_house_double, array_thresh_double)
-print("Fidelity:", fid)
+#fid = fidelity(array_house_double, array_thresh_double)
+#print("Fidelity:", fid)
 
