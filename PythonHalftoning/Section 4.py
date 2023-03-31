@@ -116,24 +116,29 @@ def create_threshold_matrix(index):
             t[row_idx, col_idx] = 255 * (index[row_idx,col_idx] + 0.5)/(N*N)
     return t
 
-def dither_one_tile(image_array, thresh, cur_row, cur_col):
+def dither_one_tile(dither_array, thresh, cur_row, cur_col):
+#    dither_array = np.zeros((image_array.shape[0],image_array.shape[1]))
     for row_idx in range(thresh.shape[0]):
         for col_idx in range(thresh.shape[1]):
-            if (image_array[(cur_row+row_idx),(cur_col+col_idx)] > thresh[row_idx,col_idx]):
-                image_array[(cur_row+row_idx),(cur_col+col_idx)] = 255
+            if (dither_array[(cur_row+row_idx),(cur_col+col_idx)] > thresh[row_idx,col_idx]):
+                dither_array[(cur_row+row_idx),(cur_col+col_idx)] = 255
             else:
-                image_array[(cur_row+row_idx),(cur_col+col_idx)] = 0
-    return image_array
+                dither_array[(cur_row+row_idx),(cur_col+col_idx)] = 0
+    return dither_array
 
 
 def dither_image(image_array, thresh, filename):
+    dither_array= np.zeros((image_array.shape[0],image_array.shape[1]))
+    for row_idx in range(image_array.shape[0]):
+        for col_idx in range(image_array.shape[1]):
+            dither_array[row_idx, col_idx] = image_array[row_idx, col_idx]
     N = thresh.shape[0]
     for row_idx in range(image_array.shape[0]):
         for col_idx in range(image_array.shape[1]):
             if ((row_idx % thresh.shape[0] == 0) and (col_idx % thresh.shape[1] == 0)):
-                image_array = dither_one_tile(image_array, thresh, row_idx, col_idx)
-    im_filtered = Image.fromarray(image_array.astype(np.uint8))
-    im_filtered.save(filename)    
+                dither_array = dither_one_tile(dither_array, thresh, row_idx, col_idx)
+    im_dithered = Image.fromarray(dither_array.astype(np.uint8))
+    im_dithered.save(filename)    
 
 
 # Section 4
@@ -161,11 +166,11 @@ T_4 = create_threshold_matrix(I_4)
 T_8 = create_threshold_matrix(I_8)
 
 dither_image(array_house_double, T_2, "DitherWith2by2.tif")
-array_house_double = convert_image_to_double_array(img_house)
-array_house_double = ungamma_correct(array_house_double, 2.2)
+#array_house_double = convert_image_to_double_array(img_house)
+#array_house_double = ungamma_correct(array_house_double, 2.2)
 dither_image(array_house_double, T_4, "DitherWith4by4.tif")
-array_house_double = convert_image_to_double_array(img_house)
-array_house_double = ungamma_correct(array_house_double, 2.2)
+#array_house_double = convert_image_to_double_array(img_house)
+#array_house_double = ungamma_correct(array_house_double, 2.2)
 dither_image(array_house_double, T_8, "DitherWith8by8.tif")
 
 
