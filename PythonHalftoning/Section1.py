@@ -122,7 +122,7 @@ print("RMSE:",house_rmse)
 array_house_double = ungamma_correct(array_house_double, 2.2)
 # Fill low pass filter
 gaussian_lpf = np.zeros((7,7))
-gaussian_lpf = calculate_lpf(gaussian_lpf, 2)
+gaussian_lpf = calculate_lpf(gaussian_lpf, math.sqrt(2))
 
 #apply filter
 array_house_double = apply_guassian_filter(gaussian_lpf,array_house_double)

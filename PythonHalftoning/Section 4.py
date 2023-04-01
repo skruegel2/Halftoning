@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
 from PIL import Image
-from numpy import linalg as LA
 import math
 
 def convert_image_to_double_array(img):
@@ -43,6 +42,7 @@ def calculate_lpf(lpf,sigma):
     for row_idx in range(lpf.shape[0]):
         for col_idx in range(lpf.shape[1]):
             scale_check += lpf[row_idx, col_idx]    
+    #print("Scale check: ",scale_check)
     return lpf
 
 def filter_pixel(X, filt, row_idx, col_idx):
@@ -59,7 +59,7 @@ def filter_pixel(X, filt, row_idx, col_idx):
                          X[win_row_idx+row_idx, win_col_idx+col_idx])
     return pixel
 
-def apply_guassian_filter(filt, image_array):
+def apply_gaussian_filter(filt, image_array):
     filtered_array = np.zeros((image_array.shape[0],image_array.shape[1]))
     for row_idx in range(image_array.shape[0]):
         for col_idx in range(image_array.shape[1]):
@@ -90,6 +90,12 @@ def apply_transformation(image_array):
     return transform_array
 
 def fidelity(f, b):
+    lpf = np.zeros((7,7))
+    calculate_lpf(lpf,math.sqrt(2))
+    f = apply_gaussian_filter(f, lpf)
+    b = apply_gaussian_filter(b, lpf)
+    f = apply_transformation(f)
+    b = apply_transformation(b)
     N = f.shape[0]
     M = f.shape[1]
     sum = 0
@@ -138,6 +144,8 @@ def dither_image(image_array, thresh, filename):
             if ((row_idx % thresh.shape[0] == 0) and (col_idx % thresh.shape[1] == 0)):
                 dither_array = dither_one_tile(dither_array, thresh, row_idx, col_idx)
     im_dithered = Image.fromarray(dither_array.astype(np.uint8))
+    plt.imshow(im_dithered,cmap='gray',interpolation='none')
+    plt.show()
     im_dithered.save(filename)    
     return dither_array
 
@@ -147,7 +155,6 @@ img_house = Image.open('house.tif')
 
 # Convert images to double
 array_house_double = convert_image_to_double_array(img_house)
-
 # Ungamma initial image
 array_house_double = ungamma_correct(array_house_double, 2.2)
  
@@ -166,20 +173,50 @@ T_2 = create_threshold_matrix(I_2)
 T_4 = create_threshold_matrix(I_4)
 T_8 = create_threshold_matrix(I_8)
 
+# 2 x 2 dither
+# Convert images to double
+array_house_double = convert_image_to_double_array(img_house)
+# Ungamma initial image
+array_house_double = ungamma_correct(array_house_double, 2.2)
 dither_2by2 = dither_image(array_house_double, T_2, "DitherWith2by2.tif")
 rmse_2by2 = rmse(array_house_double, dither_2by2)
 print("2 x 2 RMSE:",rmse_2by2)
 fid = fidelity(array_house_double, dither_2by2)
-print("Fidelity:", fid)
+print("2 x 2 Fidelity:", fid)
+
+# 4 x 4 dither
+# Convert images to double
+array_house_double = convert_image_to_double_array(img_house)
+# Ungamma initial image
+array_house_double = ungamma_correct(array_house_double, 2.2)
 dither_4by4 = dither_image(array_house_double, T_4, "DitherWith4by4.tif")
 rmse_4by4 = rmse(array_house_double, dither_4by4 )
 print("4 x 4 RMSE:",rmse_4by4)
 fid = fidelity(array_house_double, dither_4by4 )
-print("Fidelity:", fid)
+print("4 x 4 Fidelity:", fid)
+
+# 8 x 8 dither
+# Convert images to double
+array_house_double = convert_image_to_double_array(img_house)
+# Ungamma initial image
+array_house_double = ungamma_correct(array_house_double, 2.2)
 dither_8by8 = dither_image(array_house_double, T_8, "DitherWith8by8.tif")
 rmse_8by8 = rmse(array_house_double, dither_8by8)
 print("8 x 8 RMSE:",rmse_8by8)
 fid = fidelity(array_house_double, dither_8by8)
-print("Fidelity:", fid)
+print("8 x 8 Fidelity:", fid)
+
+# 4 x 4 dither
+# Convert images to double
+array_house_double = convert_image_to_double_array(img_house)
+# Ungamma initial image
+array_house_double = ungamma_correct(array_house_double, 2.2)
+dither_4by4 = dither_image(array_house_double, T_4, "DitherWith4by4.tif")
+rmse_4by4 = rmse(array_house_double, dither_4by4 )
+print("4 x 4 RMSE:",rmse_4by4)
+fid = fidelity(array_house_double, dither_4by4 )
+print("4 x 4 Fidelity:", fid)
+
+
 
 
