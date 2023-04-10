@@ -4,6 +4,9 @@ import numpy as np
 from PIL import Image
 import math
 
+FILT_SIZE = 3
+HALF_FILT = 1
+
 def convert_image_to_double_array(img):
     converted = np.array(img, dtype = float)
     return converted;
@@ -80,6 +83,13 @@ def threshold_image(img, thresh):
                 Y[row_idx, col_idx] = 0
     return Y
 
+def threshold_pixel(pixel, thresh):
+    if pixel > thresh:
+        ret_val = 255
+    else:
+        ret_val  = 0
+    return ret_val
+
 def apply_transformation(image_array):
     transform_array = np.zeros((image_array.shape[0],image_array.shape[1]))
     for row_idx in range(image_array.shape[0]):
@@ -107,104 +117,68 @@ def fidelity(f, b):
     sum = math.pow(sum, 0.5)
     return sum
 
-def generate_bayer(IN):
-    new_bayer = np.block([
-        [4*IN+1, 4*IN+2],
-        [4*IN+3, 4*IN]
-        ])
-    return new_bayer
 
-def create_threshold_matrix(index):
-    N = index.shape[0]
-    t = np.zeros((N,N))
-    for row_idx in range(N):
-        for col_idx in range(N):
-            t[row_idx, col_idx] = 255 * (index[row_idx,col_idx] + 0.5)/(N*N)
-    return t
+#def dither_image(image_array, thresh, filename):
+#    dither_array= np.zeros((image_array.shape[0],image_array.shape[1]))
+#    for row_idx in range(image_array.shape[0]):
+#        for col_idx in range(image_array.shape[1]):
+#            dither_array[row_idx, col_idx] = image_array[row_idx, col_idx]
+#    N = thresh.shape[0]
+#    for row_idx in range(image_array.shape[0]):
+#        for col_idx in range(image_array.shape[1]):
+#            if ((row_idx % thresh.shape[0] == 0) and (col_idx % thresh.shape[1] == 0)):
+#                dither_array = dither_one_tile(dither_array, thresh, row_idx, col_idx)
+#    im_dithered = Image.fromarray(dither_array.astype(np.uint8))
+#    plt.imshow(im_dithered,cmap='gray',interpolation='none')
+#    plt.show()
+#    im_dithered.save(filename)    
+#    return dither_array
 
-def dither_one_tile(dither_array, thresh, cur_row, cur_col):
-#    dither_array = np.zeros((image_array.shape[0],image_array.shape[1]))
-    for row_idx in range(thresh.shape[0]):
-        for col_idx in range(thresh.shape[1]):
-            if (dither_array[(cur_row+row_idx),(cur_col+col_idx)] > thresh[row_idx,col_idx]):
-                dither_array[(cur_row+row_idx),(cur_col+col_idx)] = 255
+def init_err_diff_filter()  :
+    h = np.zeros((FILT_SIZE, FILT_SIZE))
+    h[0,0] = 1/16
+    h[0,1] = 5/16
+    h[0,2] = 3/16
+    h[1,0] = 7/16
+    return h
+
+# Implements equation 11
+def err_diff_filter_pixel(f,h,e,row_idx, col_idx):
+    pixel = f[row_idx,col_idx]
+    for win_row_idx in range(-1,2):
+        for win_col_idx in range(-1, 2):
+            if ((win_row_idx + row_idx < 0) or
+                (win_row_idx + row_idx >= f.shape[0]) or
+                (win_col_idx + col_idx < 0) or
+                (win_col_idx + col_idx >= f.shape[1])):
+                pixel += 0
             else:
-                dither_array[(cur_row+row_idx),(cur_col+col_idx)] = 0
-    return dither_array
+                pixel += (h[win_row_idx+1,win_col_idx+1]*
+                         e[win_row_idx+row_idx, win_col_idx+col_idx])
+    return pixel
 
 
-def dither_image(image_array, thresh, filename):
-    dither_array= np.zeros((image_array.shape[0],image_array.shape[1]))
-    for row_idx in range(image_array.shape[0]):
-        for col_idx in range(image_array.shape[1]):
-            dither_array[row_idx, col_idx] = image_array[row_idx, col_idx]
-    N = thresh.shape[0]
-    for row_idx in range(image_array.shape[0]):
-        for col_idx in range(image_array.shape[1]):
-            if ((row_idx % thresh.shape[0] == 0) and (col_idx % thresh.shape[1] == 0)):
-                dither_array = dither_one_tile(dither_array, thresh, row_idx, col_idx)
-    im_dithered = Image.fromarray(dither_array.astype(np.uint8))
-    plt.imshow(im_dithered,cmap='gray',interpolation='none')
-    plt.show()
-    im_dithered.save(filename)    
-    return dither_array
+def diffuse_error(f):
+    h = init_err_diff_filter()
+    e = np.zeros((f.shape[0],f.shape[1]))
+    b = np.zeros((f.shape[0],f.shape[1]))
+    f_hat = np.zeros((f.shape[0],f.shape[1]))
+    for row_idx in range(f.shape[0]):
+        for col_idx in range(f.shape[1]):
+            f_hat[row_idx,col_idx] = err_diff_filter_pixel(f,h,e,row_idx,col_idx)              
+    
 
-
-# Section 4
+# Section 5
 img_house = Image.open('house.tif')
 
 # Convert images to double
 array_house_double = convert_image_to_double_array(img_house)
 # Ungamma initial image
 array_house_double = ungamma_correct(array_house_double, 2.2)
- 
-# Create Bayer index matrices
-I_2 = np.zeros((2,2))
-I_2[0,0] = 1
-I_2[0,1] = 2
-I_2[1,0] = 3
-I_2[1,1] = 0
 
-I_4 = generate_bayer(I_2)
-I_8 = generate_bayer(I_4)
+diffused_array = diffuse_error(array_house_double)
 
-# Generate threshold matrices
-T_2 = create_threshold_matrix(I_2)
-T_4 = create_threshold_matrix(I_4)
-T_8 = create_threshold_matrix(I_8)
 
-# 2 x 2 dither
-# Convert images to double
-array_house_double = convert_image_to_double_array(img_house)
-# Ungamma initial image
-array_house_double = ungamma_correct(array_house_double, 2.2)
-dither_2by2 = dither_image(array_house_double, T_2, "DitherWith2by2.tif")
-rmse_2by2 = rmse(array_house_double, dither_2by2)
-print("2 x 2 RMSE:",rmse_2by2)
-fid = fidelity(array_house_double, dither_2by2)
-print("2 x 2 Fidelity:", fid)
-
-# 4 x 4 dither
-# Convert images to double
-array_house_double = convert_image_to_double_array(img_house)
-# Ungamma initial image
-array_house_double = ungamma_correct(array_house_double, 2.2)
-dither_4by4 = dither_image(array_house_double, T_4, "DitherWith4by4.tif")
-rmse_4by4 = rmse(array_house_double, dither_4by4 )
-print("4 x 4 RMSE:",rmse_4by4)
-fid = fidelity(array_house_double, dither_4by4 )
-print("4 x 4 Fidelity:", fid)
-
-# 8 x 8 dither
-# Convert images to double
-array_house_double = convert_image_to_double_array(img_house)
-# Ungamma initial image
-array_house_double = ungamma_correct(array_house_double, 2.2)
-dither_8by8 = dither_image(array_house_double, T_8, "DitherWith8by8.tif")
-rmse_8by8 = rmse(array_house_double, dither_8by8)
-print("8 x 8 RMSE:",rmse_8by8)
-fid = fidelity(array_house_double, dither_8by8)
-print("8 x 8 Fidelity:", fid)
 
 
 

@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>ed29e623-b50f-4725-bdd7-0ed760d6c410</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Section 4.py</StartupFile>
+    <StartupFile>Section 5.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,6 +22,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Section 4.py" />
+    <Compile Include="Section 5.py" />
     <Compile Include="Section1.py" />
     <Compile Include="SpecAnal.py" />
   </ItemGroup>
