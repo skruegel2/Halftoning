@@ -137,42 +137,38 @@ def fidelity(f, b):
 
 def init_err_diff_filter()  :
     h = np.zeros((FILT_SIZE, FILT_SIZE))
-    h[0,0] = 1/16
-    h[0,1] = 5/16
-    h[0,2] = 3/16
-    h[1,0] = 7/16
+    h[1,2] = 7/16
+    h[2,0] = 3/16
+    h[2,1] = 5/16
+    h[2,2] = 1/16
     return h
 
-# Implements equation 11
-def err_diff_filter_pixel(f,h,e,row_idx, col_idx):
-    pixel = f[row_idx,col_idx]
+# Diffuse error
+def add_scaled_error(f,h,error,row_idx, col_idx):
     for win_row_idx in range(-1,2):
         for win_col_idx in range(-1, 2):
-            if ((win_row_idx + row_idx < 0) or
-                (win_row_idx + row_idx >= f.shape[0]) or
-                (win_col_idx + col_idx < 0) or
-                (win_col_idx + col_idx >= f.shape[1])):
-                pixel += 0
-            else:
-                pixel += (h[win_row_idx+1,win_col_idx+1]*
-                         e[win_row_idx+row_idx, win_col_idx+col_idx])
-    return pixel
+            if ((win_row_idx + row_idx >= 0) and
+                (win_row_idx + row_idx < f.shape[0]) and
+                (win_col_idx + col_idx >= 0) and
+                (win_col_idx + col_idx < f.shape[1])):
+                f[win_row_idx+row_idx, win_col_idx+col_idx] += h[win_row_idx+1,win_col_idx+1]*error
+    return f
 
 
 def diffuse_error(f,filename):
     h = init_err_diff_filter()
     e = np.zeros((f.shape[0],f.shape[1]))
     b = np.zeros((f.shape[0],f.shape[1]))
-    f_hat = np.zeros((f.shape[0],f.shape[1]))
     for row_idx in range(f.shape[0]):
         for col_idx in range(f.shape[1]):
-            f_hat[row_idx,col_idx] = err_diff_filter_pixel(f,h,e,row_idx,col_idx)              
-            b[row_idx, col_idx] = threshold_pixel(f_hat[row_idx,col_idx],ERR_DIFF_THRESH)
-            e[row_idx, col_idx] = f_hat[row_idx,col_idx] - b[row_idx, col_idx]
+            b[row_idx, col_idx] = threshold_pixel(f[row_idx,col_idx],ERR_DIFF_THRESH)
+            error = f[row_idx,col_idx] - b[row_idx, col_idx]             
+            f = add_scaled_error(f,h,error,row_idx,col_idx)
     diffused = Image.fromarray(b.astype(np.uint8))
     plt.imshow(diffused,cmap='gray',interpolation='none')
     plt.show()
     diffused.save(filename) 
+    return b
 
 # Section 5
 img_house = Image.open('house.tif')
@@ -181,9 +177,17 @@ img_house = Image.open('house.tif')
 array_house_double = convert_image_to_double_array(img_house)
 # Ungamma initial image
 array_house_double = ungamma_correct(array_house_double, 2.2)
-
 diffused_array = diffuse_error(array_house_double,"diff.tif")
-
+# RMSE
+array_house_double = convert_image_to_double_array(img_house)
+rmse_diffused = rmse(array_house_double, diffused_array)
+print("RMSE diffused: ", rmse_diffused)
+# Fidelity
+array_house_double = convert_image_to_double_array(img_house)
+# Ungamma initial image
+array_house_double = ungamma_correct(array_house_double, 2.2)
+fidelity_diffused = fidelity(array_house_double, diffused_array)
+print("Fidelity diffused: ", fidelity_diffused)
 
 
 
