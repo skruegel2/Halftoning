@@ -154,7 +154,6 @@ def add_scaled_error(f,h,error,row_idx, col_idx):
                 f[win_row_idx+row_idx, win_col_idx+col_idx] += h[win_row_idx+1,win_col_idx+1]*error
     return f
 
-
 def diffuse_error(f,filename):
     h = init_err_diff_filter()
     e = np.zeros((f.shape[0],f.shape[1]))
@@ -165,8 +164,8 @@ def diffuse_error(f,filename):
             error = f[row_idx,col_idx] - b[row_idx, col_idx]             
             f = add_scaled_error(f,h,error,row_idx,col_idx)
     diffused = Image.fromarray(b.astype(np.uint8))
-    plt.imshow(diffused,cmap='gray',interpolation='none')
-    plt.show()
+    #plt.imshow(diffused,cmap='gray',interpolation='none')
+    #plt.show()
     diffused.save(filename) 
     return b
 
