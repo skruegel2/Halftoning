@@ -6,6 +6,7 @@ import math
 
 FILT_SIZE = 3
 HALF_FILT = 1
+ERR_DIFF_THRESH = 127
 
 def convert_image_to_double_array(img):
     converted = np.array(img, dtype = float)
@@ -158,7 +159,7 @@ def err_diff_filter_pixel(f,h,e,row_idx, col_idx):
     return pixel
 
 
-def diffuse_error(f):
+def diffuse_error(f,filename):
     h = init_err_diff_filter()
     e = np.zeros((f.shape[0],f.shape[1]))
     b = np.zeros((f.shape[0],f.shape[1]))
@@ -166,7 +167,12 @@ def diffuse_error(f):
     for row_idx in range(f.shape[0]):
         for col_idx in range(f.shape[1]):
             f_hat[row_idx,col_idx] = err_diff_filter_pixel(f,h,e,row_idx,col_idx)              
-    
+            b[row_idx, col_idx] = threshold_pixel(f_hat[row_idx,col_idx],ERR_DIFF_THRESH)
+            e[row_idx, col_idx] = f_hat[row_idx,col_idx] - b[row_idx, col_idx]
+    diffused = Image.fromarray(b.astype(np.uint8))
+    plt.imshow(diffused,cmap='gray',interpolation='none')
+    plt.show()
+    diffused.save(filename) 
 
 # Section 5
 img_house = Image.open('house.tif')
@@ -176,7 +182,7 @@ array_house_double = convert_image_to_double_array(img_house)
 # Ungamma initial image
 array_house_double = ungamma_correct(array_house_double, 2.2)
 
-diffused_array = diffuse_error(array_house_double)
+diffused_array = diffuse_error(array_house_double,"diff.tif")
 
 
 
