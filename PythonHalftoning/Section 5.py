@@ -27,11 +27,12 @@ def rmse(array_orig, array_binary):
     return rmse
 
 def ungamma_correct(g_array, gamma):
+    g_output = np.zeros((g_array.shape[0],g_array.shape[1]),dtype=float)
     for row_idx in range(g_array.shape[0]):
         for col_idx in range(g_array.shape[1]):
-            g_array[row_idx, col_idx] = math.pow((g_array[row_idx, col_idx]/255), gamma)    
-            g_array[row_idx, col_idx] *= 255
-    return g_array
+            g_output[row_idx, col_idx] = math.pow((g_array[row_idx, col_idx]/255), gamma)    
+            g_output[row_idx, col_idx] *= 255
+    return g_output
 
 def calculate_lpf(lpf,sigma):
     scale_factor = 0
@@ -119,22 +120,6 @@ def fidelity(f, b):
     return sum
 
 
-#def dither_image(image_array, thresh, filename):
-#    dither_array= np.zeros((image_array.shape[0],image_array.shape[1]))
-#    for row_idx in range(image_array.shape[0]):
-#        for col_idx in range(image_array.shape[1]):
-#            dither_array[row_idx, col_idx] = image_array[row_idx, col_idx]
-#    N = thresh.shape[0]
-#    for row_idx in range(image_array.shape[0]):
-#        for col_idx in range(image_array.shape[1]):
-#            if ((row_idx % thresh.shape[0] == 0) and (col_idx % thresh.shape[1] == 0)):
-#                dither_array = dither_one_tile(dither_array, thresh, row_idx, col_idx)
-#    im_dithered = Image.fromarray(dither_array.astype(np.uint8))
-#    plt.imshow(im_dithered,cmap='gray',interpolation='none')
-#    plt.show()
-#    im_dithered.save(filename)    
-#    return dither_array
-
 def init_err_diff_filter()  :
     h = np.zeros((FILT_SIZE, FILT_SIZE))
     h[1,2] = 7/16
@@ -169,19 +154,28 @@ def diffuse_error(f,filename):
     diffused.save(filename) 
     return b
 
+def convert_to_double(input_array):
+    output = np.zeros((input_array.shape[0],input_array.shape[1]),dtype=float)
+    for row_idx in range(input_array.shape[0]):
+        for col_idx in range(input_array.shape[1]):  
+            output[row_idx, col_idx] = float(input_array[row_idx,col_idx])
+    return output
+
 # Section 5
 img_house = Image.open('house.tif')
 
-# Convert images to double
-array_house_double = convert_image_to_double_array(img_house)
+array_house = np.array(img_house)
 # Ungamma initial image
-array_house_ungamma = ungamma_correct(array_house_double, 2.2)
-diffused_array = diffuse_error(array_house_ungamma,"diff.tif")
+array_house_ungamma = ungamma_correct(array_house, 2.2)
+# Convert to double
+ah_double = convert_to_double(array_house)
+ah_ungamma_double = convert_to_double(array_house_ungamma)
+diffused_array = diffuse_error(ah_ungamma_double,"diffused_error.tif")
 # RMSE
-rmse_diffused = rmse(array_house_double, diffused_array)
+rmse_diffused = rmse(ah_double, diffused_array)
 print("RMSE diffused: ", rmse_diffused)
 # Fidelity
-fidelity_diffused = fidelity(array_house_ungamma, diffused_array)
+fidelity_diffused = fidelity(ah_ungamma_double, diffused_array)
 print("Fidelity diffused: ", fidelity_diffused)
 
 
