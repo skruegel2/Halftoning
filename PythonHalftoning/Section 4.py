@@ -152,11 +152,6 @@ def dither_image(image_array, thresh, filename):
 
 # Section 4
 img_house = Image.open('house.tif')
-
-# Convert images to double
-array_house_double = convert_image_to_double_array(img_house)
-# Ungamma initial image
-array_house_double = ungamma_correct(array_house_double, 2.2)
  
 # Create Bayer index matrices
 I_2 = np.zeros((2,2))
@@ -170,40 +165,38 @@ I_8 = generate_bayer(I_4)
 
 # Generate threshold matrices
 T_2 = create_threshold_matrix(I_2)
+print("Bayer 2x2:")
+print(I_2)
 T_4 = create_threshold_matrix(I_4)
+print("Bayer 4x4:")
+print(I_4)
 T_8 = create_threshold_matrix(I_8)
+print("Bayer 8x8:")
+print(I_8)
 
 # 2 x 2 dither
 # Convert images to double
 array_house_double = convert_image_to_double_array(img_house)
 # Ungamma initial image
-array_house_double = ungamma_correct(array_house_double, 2.2)
-dither_2by2 = dither_image(array_house_double, T_2, "DitherWith2by2.tif")
+array_house_ungamma = ungamma_correct(array_house_double, 2.2)
+dither_2by2 = dither_image(array_house_ungamma, T_2, "DitherWith2by2.tif")
 rmse_2by2 = rmse(array_house_double, dither_2by2)
 print("2 x 2 RMSE:",rmse_2by2)
-fid = fidelity(array_house_double, dither_2by2)
+fid = fidelity(array_house_ungamma, dither_2by2)
 print("2 x 2 Fidelity:", fid)
 
 # 4 x 4 dither
-# Convert images to double
-array_house_double = convert_image_to_double_array(img_house)
-# Ungamma initial image
-array_house_double = ungamma_correct(array_house_double, 2.2)
-dither_4by4 = dither_image(array_house_double, T_4, "DitherWith4by4.tif")
+dither_4by4 = dither_image(array_house_ungamma, T_4, "DitherWith4by4.tif")
 rmse_4by4 = rmse(array_house_double, dither_4by4 )
 print("4 x 4 RMSE:",rmse_4by4)
-fid = fidelity(array_house_double, dither_4by4 )
+fid = fidelity(array_house_ungamma, dither_4by4 )
 print("4 x 4 Fidelity:", fid)
 
 # 8 x 8 dither
-# Convert images to double
-array_house_double = convert_image_to_double_array(img_house)
-# Ungamma initial image
-array_house_double = ungamma_correct(array_house_double, 2.2)
-dither_8by8 = dither_image(array_house_double, T_8, "DitherWith8by8.tif")
+dither_8by8 = dither_image(array_house_ungamma, T_8, "DitherWith8by8.tif")
 rmse_8by8 = rmse(array_house_double, dither_8by8)
 print("8 x 8 RMSE:",rmse_8by8)
-fid = fidelity(array_house_double, dither_8by8)
+fid = fidelity(array_house_ungamma, dither_8by8)
 print("8 x 8 Fidelity:", fid)
 
 

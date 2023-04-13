@@ -175,17 +175,13 @@ img_house = Image.open('house.tif')
 # Convert images to double
 array_house_double = convert_image_to_double_array(img_house)
 # Ungamma initial image
-array_house_double = ungamma_correct(array_house_double, 2.2)
-diffused_array = diffuse_error(array_house_double,"diff.tif")
+array_house_ungamma = ungamma_correct(array_house_double, 2.2)
+diffused_array = diffuse_error(array_house_ungamma,"diff.tif")
 # RMSE
-array_house_double = convert_image_to_double_array(img_house)
 rmse_diffused = rmse(array_house_double, diffused_array)
 print("RMSE diffused: ", rmse_diffused)
 # Fidelity
-array_house_double = convert_image_to_double_array(img_house)
-# Ungamma initial image
-array_house_double = ungamma_correct(array_house_double, 2.2)
-fidelity_diffused = fidelity(array_house_double, diffused_array)
+fidelity_diffused = fidelity(array_house_ungamma, diffused_array)
 print("Fidelity diffused: ", fidelity_diffused)
 
 
