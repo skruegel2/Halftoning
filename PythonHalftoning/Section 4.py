@@ -8,6 +8,13 @@ def convert_image_to_double_array(img):
     converted = np.array(img, dtype = float)
     return converted;
 
+def convert_to_double(input_array):
+    output = np.zeros((input_array.shape[0],input_array.shape[1]),dtype=float)
+    for row_idx in range(input_array.shape[0]):
+        for col_idx in range(input_array.shape[1]):  
+            output[row_idx, col_idx] = float(input_array[row_idx,col_idx])
+    return output
+
 def rmse(array_orig, array_binary):
     # Work from inside out
     error_sum = 0
@@ -149,13 +156,6 @@ def dither_image(image_array, thresh, filename):
     plt.show()
     im_dithered.save(filename)    
     return dither_array
-
-def convert_to_double(input_array):
-    output = np.zeros((input_array.shape[0],input_array.shape[1]),dtype=float)
-    for row_idx in range(input_array.shape[0]):
-        for col_idx in range(input_array.shape[1]):  
-            output[row_idx, col_idx] = float(input_array[row_idx,col_idx])
-    return output
 
 # Section 4
  
